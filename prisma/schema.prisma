@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String           @id @default(cuid())
+  name            String
+  username        String           @unique
+  password        String
+  role            String           @default("NURSE") // ADMIN, NURSE
+  administrations Administration[]
+  auditLogs       AuditLog[]
+  prescriptions   Prescription[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model Patient {
+  id            String         @id @default(cuid())
+  name          String
+  admissionDate DateTime       @default(now())
+  room          String?
+  status        String         @default("ACTIVE") // ACTIVE, DISCHARGED
+  prescriptions Prescription[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Medication {
+  id            String         @id @default(cuid())
+  name          String
+  dosage        String
+  activeGroup   String         @default("Geral")
+  prescriptions Prescription[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Prescription {
+  id              String           @id @default(cuid())
+  patient         Patient          @relation(fields: [patientId], references: [id])
+  patientId       String
+  medication      Medication       @relation(fields: [medicationId], references: [id])
+  medicationId    String
+  instructions    String?
+  
+  // Schedule flags
+  jejum           Boolean          @default(false)
+  pequenoAlmoco   Boolean          @default(false)
+  almoco          Boolean          @default(false)
+  lanche          Boolean          @default(false)
+  jantar          Boolean          @default(false)
+  deitar          Boolean          @default(false)
+  
+  startDate       DateTime         @default(now())
+  endDate         DateTime?
+  active          Boolean          @default(true)
+  
+  prescribedBy    User             @relation(fields: [prescribedById], references: [id])
+  prescribedById  String
+  
+  administrations Administration[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model Administration {
+  id             String       @id @default(cuid())
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id])
+  prescriptionId String
+  date           DateTime     @default(now())
+  timeSlot       String       // JEJUM, PA, ALMOCO, LANCHE, JANTAR, DEITAR
+  status         String       @default("TAKEN") // TAKEN, REFUSED, SKIPPED, PENDING
+  administeredBy User         @relation(fields: [administeredById], references: [id])
+  administeredById String
+  note           String?
+  createdAt      DateTime     @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  entityType String   // Patient, Prescription, etc.
+  entityId   String
+  action     String   // CREATE, UPDATE, DELETE
+  changedBy  User     @relation(fields: [changedById], references: [id])
+  changedById String
+  timestamp  DateTime @default(now())
+  details    String   // JSON string of changes
+}

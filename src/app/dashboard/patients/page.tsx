@@ -3,8 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import styles from "./patients.module.css";
 
+import { auth } from "@/auth";
+
 export default async function PatientsPage() {
+    const session = await auth();
+    const locationId = (session?.user as any)?.locationId;
+
     const patients = await prisma.patient.findMany({
+        where: locationId ? { locationId } : {},
         orderBy: { name: 'asc' },
     });
 

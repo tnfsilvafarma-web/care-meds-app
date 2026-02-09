@@ -2,13 +2,23 @@ import { prisma } from "@/lib/prisma";
 import AdminRecordItem from "./AdminRecordItem";
 import styles from "./records.module.css";
 
+import { auth } from "@/auth";
+
 export default async function RecordsPage() {
+    const session = await auth();
+    const locationId = (session?.user as any)?.locationId;
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     // Fetch all active prescriptions and their administrations for today
     const prescriptions = await prisma.prescription.findMany({
-        where: { active: true },
+        where: {
+            active: true,
+            patient: locationId ? {
+                locationId: { equals: locationId }
+            } as any : undefined
+        },
         include: {
             patient: true,
             medication: true,
@@ -20,7 +30,7 @@ export default async function RecordsPage() {
                 }
             }
         }
-    });
+    }) as any[];
 
     const slots = [
         { key: 'jejum', label: 'Jejum' },

@@ -1,10 +1,20 @@
 import { prisma } from "@/lib/prisma";
 import { ShieldCheckIcon } from "@heroicons/react/24/outline";
 
+import { auth } from "@/auth";
+
 export default async function AuditPage() {
+    const session = await auth();
+    const locationId = (session?.user as any)?.locationId;
+
     const logs = await prisma.auditLog.findMany({
+        where: locationId ? {
+            changedBy: {
+                locationId: { equals: locationId }
+            }
+        } as any : undefined,
         orderBy: { timestamp: 'desc' },
-        take: 50, // Only show last 50 for performance
+        take: 50,
     });
 
     return (

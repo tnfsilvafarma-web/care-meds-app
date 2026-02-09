@@ -32,12 +32,18 @@ export async function authenticate(
 export async function createPatient(prevState: ActionState, formData: FormData): Promise<ActionState> {
     const name = formData.get("name") as string;
     const room = formData.get("room") as string;
+    const session = await auth();
+    const locationId = (session?.user as any)?.locationId;
 
     if (!name) return { error: "Nome é obrigatório.", success: false };
 
     try {
         const patient = await prisma.patient.create({
-            data: { name, room },
+            data: {
+                name,
+                room,
+                locationId: locationId || undefined // Allow global if no location
+            },
         });
         return { success: true, id: patient.id };
     } catch (error) {
@@ -146,5 +152,31 @@ export async function recordAdministration(prevState: ActionState, formData: For
     } catch (error) {
         console.error(error);
         return { error: "Falha ao registar administração.", success: false };
+    }
+}
+
+export async function deactivatePrescription(id: string) {
+    const userId = "cls_admin_001"; // Placeholder
+
+    try {
+        const prescription = await prisma.prescription.update({
+            where: { id },
+            data: { active: false },
+        });
+
+        await prisma.auditLog.create({
+            data: {
+                entityType: "PRESCRIPTION",
+                entityId: id,
+                action: "UPDATE",
+                changedById: userId,
+                details: `Prescrição desativada`,
+            }
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { error: "Falha ao desativar prescrição.", success: false };
     }
 }

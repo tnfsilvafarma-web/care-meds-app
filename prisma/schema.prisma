@@ -12,6 +12,8 @@ model User {
   username        String           @unique
   password        String
   role            String           @default("NURSE") // ADMIN, NURSE
+  location        Location?        @relation(fields: [locationId], references: [id])
+  locationId      String?
   administrations Administration[]
   auditLogs       AuditLog[]
   prescriptions   Prescription[]
@@ -19,12 +21,23 @@ model User {
   updatedAt       DateTime         @updatedAt
 }
 
+model Location {
+  id        String    @id @default(cuid())
+  name      String
+  address   String?
+  users     User[]
+  patients  Patient[]
+  createdAt DateTime  @default(now())
+}
+
 model Patient {
   id            String         @id @default(cuid())
   name          String
-  admissionDate DateTime       @default(now())
   room          String?
+  admissionDate DateTime       @default(now())
   status        String         @default("ACTIVE") // ACTIVE, DISCHARGED
+  location      Location?      @relation(fields: [locationId], references: [id])
+  locationId    String?
   prescriptions Prescription[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt

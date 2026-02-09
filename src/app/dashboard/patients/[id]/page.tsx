@@ -59,12 +59,13 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
                                     <th key={label} className={`${styles.th} ${styles.scheduleCell}`}>{label}</th>
                                 ))}
                                 <th className={styles.th}>Instruções</th>
+                                <th className={styles.th}>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             {patient.prescriptions.length === 0 ? (
                                 <tr>
-                                    <td colSpan={scheduleLabels.length + 3} className={styles.td} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                                    <td colSpan={scheduleLabels.length + 4} className={styles.td} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
                                         Nenhuma medicação ativa prescrita.
                                     </td>
                                 </tr>
@@ -92,6 +93,19 @@ export default async function PatientDetailPage({ params }: { params: { id: stri
                                             {p.deitar ? <div className={styles.activeDot} /> : <div className={styles.inactiveDot} />}
                                         </td>
                                         <td className={styles.td}>{p.instructions || '-'}</td>
+                                        <td className={styles.td}>
+                                            <form action={async () => {
+                                                "use server";
+                                                const { deactivatePrescription } = await import("@/lib/actions");
+                                                await deactivatePrescription(p.id);
+                                                const { revalidatePath } = await import("next/cache");
+                                                revalidatePath(`/dashboard/patients/${patient.id}`);
+                                            }}>
+                                                <button type="submit" style={{ color: '#dc2626', fontSize: '0.75rem', fontWeight: 600, border: 'none', background: 'none', cursor: 'pointer' }}>
+                                                    Suspender
+                                                </button>
+                                            </form>
+                                        </td>
                                     </tr>
                                 ))
                             )}

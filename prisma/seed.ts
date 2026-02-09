@@ -11,20 +11,35 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-    const hashedPassword = await bcrypt.hash("admin123", 10);
+    try {
+        const hashedPassword = await bcrypt.hash("admin123", 10);
 
-    const admin = await prisma.user.upsert({
-        where: { username: "admin" },
-        update: {},
-        create: {
-            username: "admin",
-            name: "System Admin",
-            password: hashedPassword,
-            role: "ADMIN",
-        },
-    });
+        const location = await prisma.location.upsert({
+            where: { id: "loc_001" },
+            update: {},
+            create: {
+                id: "loc_001",
+                name: "Clínica Central",
+                address: "Av. da Saúde, 123",
+            }
+        });
 
-    console.log("Admin user created successfully.");
+        const user = await prisma.user.upsert({
+            where: { username: "admin" },
+            update: { locationId: location.id },
+            create: {
+                id: "cls_admin_001",
+                name: "Administrador Central",
+                username: "admin",
+                password: hashedPassword,
+                role: "ADMIN",
+                locationId: location.id
+            },
+        });
+        console.log("Seed successful: Admin user created/updated with Location");
+    } catch (error) {
+        console.error("Error seeding data:", error);
+    }
 }
 
 main()
